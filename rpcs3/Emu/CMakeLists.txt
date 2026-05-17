@@ -660,6 +660,8 @@ endif()
 if(APPLE)
     target_sources(rpcs3_emu PRIVATE
         RSX/MTL/MTLGSRender.mm
+        RSX/MTL/MTLBufferAllocator.mm
+        RSX/MTL/MTLDraw.mm
         RSX/MTL/MTLVertexProgram.cpp
         RSX/MTL/MTLFragmentProgram.cpp
         RSX/MTL/MTLProgramPipeline.mm
