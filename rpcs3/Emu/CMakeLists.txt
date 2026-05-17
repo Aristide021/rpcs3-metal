@@ -657,6 +657,16 @@ if(TARGET 3rdparty_vulkan)
     endif()
 endif()
 
+if(APPLE)
+    target_sources(rpcs3_emu PRIVATE
+        RSX/MTL/MTLGSRender.mm
+    )
+    target_link_libraries(rpcs3_emu PRIVATE
+        "-framework Metal"
+        "-framework QuartzCore"
+    )
+endif()
+
 if(NOT WIN32)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()

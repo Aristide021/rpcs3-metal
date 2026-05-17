@@ -61,6 +61,10 @@
 #include "Emu/RSX/VK/VKGSRender.h"
 #endif
 
+#ifdef __APPLE__
+#include "Emu/RSX/MTL/MTLGSRender.h"
+#endif
+
 #ifdef _WIN32
 #include <Usbiodef.h>
 #include <Dbt.h>
@@ -597,6 +601,13 @@ std::unique_ptr<gs_frame> gui_application::get_gs_frame()
 		frame = new gs_frame(screen, frame_geometry, app_icon, m_gui_settings, m_start_games_fullscreen);
 		break;
 	}
+#ifdef __APPLE__
+	case video_renderer::metal:
+	{
+		frame = new gs_frame(screen, frame_geometry, app_icon, m_gui_settings, m_start_games_fullscreen);
+		break;
+	}
+#endif
 	}
 
 	m_game_window = frame;
@@ -683,6 +694,13 @@ void gui_application::InitializeCallbacks()
 #endif
 			break;
 		}
+#ifdef __APPLE__
+		case video_renderer::metal:
+		{
+			g_fxo->init<rsx::thread, named_thread<MTLGSRender>>(ar);
+			break;
+		}
+#endif
 		}
 	};
 

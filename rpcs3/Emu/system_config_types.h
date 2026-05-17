@@ -46,6 +46,9 @@ enum class video_renderer
 	null,
 	opengl,
 	vulkan,
+#ifdef __APPLE__
+	metal,
+#endif
 };
 
 enum class audio_renderer
