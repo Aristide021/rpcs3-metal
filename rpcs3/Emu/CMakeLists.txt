@@ -660,10 +660,15 @@ endif()
 if(APPLE)
     target_sources(rpcs3_emu PRIVATE
         RSX/MTL/MTLGSRender.mm
+        RSX/MTL/MTLVertexProgram.cpp
+        RSX/MTL/MTLFragmentProgram.cpp
+        RSX/MTL/MTLProgramPipeline.mm
+        RSX/MTL/MTLFormats.cpp
     )
     target_link_libraries(rpcs3_emu PRIVATE
         "-framework Metal"
         "-framework QuartzCore"
+        3rdparty::spirv-cross
     )
 endif()
 
