@@ -467,9 +467,9 @@ void MTLGSRender::emit_geometry(u32 sub_index)
 			td.pixelFormat = MTLPixelFormatR8Uint;
 			td.width       = static_cast<NSUInteger>(pers_bytes);
 			td.usage       = MTLTextureUsageShaderRead;
-			id<MTLTexture> tv = [attrib_buf newTextureWithDescriptor:td
-			                                                  offset:pers_offset
-			                                             bytesPerRow:0];
+			MTLTextureRef tv = [attrib_buf newTextureWithDescriptor:td
+			                                                 offset:pers_offset
+			                                            bytesPerRow:0];
 			[enc setVertexTexture:tv atIndex:0];
 		}
 
@@ -480,9 +480,9 @@ void MTLGSRender::emit_geometry(u32 sub_index)
 			td.pixelFormat = MTLPixelFormatR8Uint;
 			td.width       = static_cast<NSUInteger>(vol_bytes);
 			td.usage       = MTLTextureUsageShaderRead;
-			id<MTLTexture> tv = [attrib_buf newTextureWithDescriptor:td
-			                                                  offset:vol_offset
-			                                             bytesPerRow:0];
+			MTLTextureRef tv = [attrib_buf newTextureWithDescriptor:td
+			                                                 offset:vol_offset
+			                                            bytesPerRow:0];
 			[enc setVertexTexture:tv atIndex:1];
 		}
 
