@@ -2,7 +2,10 @@
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#define Vector128 _AppleCarbonVector128
 #import <Metal/Metal.h>
+#undef Vector128
+
 #include "stdafx.h"
 #include "MTLProgramPipeline.h"
 #include "util/logs.hpp"
@@ -22,6 +25,7 @@ struct MTLPipelineHandle
 // ---------------------------------------------------------------------------
 // mtl::program
 // ---------------------------------------------------------------------------
+mtl::program::program()  = default;
 mtl::program::~program() = default;
 
 static id<MTLLibrary> compile_msl(id<MTLDevice> device, const std::string& source, const char* label)
@@ -52,9 +56,10 @@ static id<MTLLibrary> compile_msl(id<MTLDevice> device, const std::string& sourc
 }
 
 bool mtl::program::build(
-	void*                  device_handle,
-	const compiled_shader& vs,
-	const compiled_shader& fs)
+	void*                         device_handle,
+	const compiled_shader&        vs,
+	const compiled_shader&        fs,
+	const pipeline_raster_config& raster)
 {
 	@autoreleasepool
 	{
@@ -78,9 +83,27 @@ bool mtl::program::build(
 		}
 
 		MTLRenderPipelineDescriptor* desc = [MTLRenderPipelineDescriptor new];
-		desc.vertexFunction                         = vs_fn;
-		desc.fragmentFunction                       = fs_fn;
-		desc.colorAttachments[0].pixelFormat        = MTLPixelFormatBGRA8Unorm;
+		desc.vertexFunction   = vs_fn;
+		desc.fragmentFunction = fs_fn;
+
+		// Apply per-attachment pixel format and blend state.
+		const MTLPixelFormat color_fmt = raster.color_format
+			? (MTLPixelFormat)raster.color_format
+			: MTLPixelFormatBGRA8Unorm;
+
+		MTLRenderPipelineColorAttachmentDescriptor* att = desc.colorAttachments[0];
+		att.pixelFormat           = color_fmt;
+		att.blendingEnabled       = raster.blend.enabled ? YES : NO;
+		att.rgbBlendOperation     = (MTLBlendOperation)raster.blend.rgb_op;
+		att.alphaBlendOperation   = (MTLBlendOperation)raster.blend.alpha_op;
+		att.sourceRGBBlendFactor       = (MTLBlendFactor)raster.blend.src_rgb;
+		att.destinationRGBBlendFactor  = (MTLBlendFactor)raster.blend.dst_rgb;
+		att.sourceAlphaBlendFactor     = (MTLBlendFactor)raster.blend.src_alpha;
+		att.destinationAlphaBlendFactor= (MTLBlendFactor)raster.blend.dst_alpha;
+		att.writeMask                  = (MTLColorWriteMask)raster.blend.write_mask;
+
+		if (raster.depth_format)
+			desc.depthAttachmentPixelFormat = (MTLPixelFormat)raster.depth_format;
 
 		NSError* error = nil;
 		handle->state  = [device newRenderPipelineStateWithDescriptor:desc error:&error];

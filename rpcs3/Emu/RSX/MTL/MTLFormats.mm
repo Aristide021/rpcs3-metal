@@ -1,11 +1,11 @@
+#define Vector128 _AppleCarbonVector128
+#import <Metal/Metal.h>
+#undef Vector128
+
 #include "stdafx.h"
 #include "MTLFormats.h"
 
-// Pull in the real MTLPixelFormat constants — they're just NSUInteger values,
-// so we can use them in plain C++ as long as we don't call ObjC methods.
-#import <Metal/Metal.h>
-
-namespace mtl::formats
+namespace mtl
 {
 
 MTLPixelFormat surface_color(rsx::surface_color_format fmt)
@@ -14,7 +14,7 @@ MTLPixelFormat surface_color(rsx::surface_color_format fmt)
 	switch (fmt)
 	{
 	// 16-bit packed — macOS Metal has no R5G6B5; promote to BGRA8.
-	case F::b5g6r5:
+	case F::r5g6b5:
 	case F::x1r5g5b5_o1r5g5b5:
 	case F::x1r5g5b5_z1r5g5b5:
 		return MTLPixelFormatBGRA8Unorm;
@@ -112,4 +112,4 @@ bool needs_bgr_swizzle(rsx::surface_color_format fmt)
 	}
 }
 
-} // namespace mtl::formats
+} // namespace mtl

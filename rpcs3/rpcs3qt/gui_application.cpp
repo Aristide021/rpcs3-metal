@@ -65,6 +65,10 @@
 #include "Emu/RSX/MTL/MTLGSRender.h"
 #endif
 
+#ifdef __APPLE__
+#include "Emu/RSX/MTL/MTLGSRender.h"
+#endif
+
 #ifdef _WIN32
 #include <Usbiodef.h>
 #include <Dbt.h>

@@ -122,7 +122,11 @@ void headless_application::InitializeCallbacks()
 		}
 		case music_handler::qt:
 		{
-			fmt::throw_exception("Headless mode can not be used with this music handler. Current handler: %s", g_cfg.audio.music.get());
+			// Headless mode can't use the Qt music handler — fall back to null
+			// rather than killing emulation. The fatal throw was killing our
+			// test runs before the renderer ever initialized.
+			sys_log.warning("Headless mode: falling back to null music handler (config requested Qt).");
+			return std::make_shared<null_music_handler>();
 		}
 		}
 		return nullptr;

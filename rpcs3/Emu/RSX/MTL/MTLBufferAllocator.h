@@ -18,7 +18,9 @@ namespace mtl
 	public:
 		static constexpr usz default_size = 128 * 1024 * 1024; // 128 MB
 
-		buffer_ring() = default;
+		// Defined out-of-line in MTLBufferAllocator.mm so unique_ptr<MTLBufferState>
+		// destruction only needs to know about MTLBufferState's full definition there.
+		buffer_ring();
 		~buffer_ring();
 		buffer_ring(const buffer_ring&) = delete;
 

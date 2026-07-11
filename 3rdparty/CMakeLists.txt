@@ -105,6 +105,20 @@ if(APPLE)
     add_library(3rdparty::spirv-cross ALIAS spirv-cross-msl)
 endif()
 
+# SPIRV-Cross (used by the Metal backend to convert SPIR-V → MSL)
+if(APPLE)
+    set(SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_GLSL ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_MSL ON CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_CPP OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_ENABLE_REFLECT OFF CACHE BOOL "" FORCE)
+    set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+    add_subdirectory(spirv-cross EXCLUDE_FROM_ALL)
+    add_library(3rdparty::spirv-cross ALIAS spirv-cross-msl)
+endif()
+
 # yaml-cpp
 add_subdirectory(yaml-cpp)
 

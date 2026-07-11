@@ -10,8 +10,8 @@ public:
 	MTLVertexProgram() = default;
 	~MTLVertexProgram() = default;
 
-	ParamArray parr;
 	mtl::compiled_shader compiled;
+	mtl::vertex_binding_table binding_table;
 
 	// Decompiles RSX microcode → GLSL → SPIR-V → MSL.
 	// Does not touch any Vulkan or Metal API — safe to call from any thread.

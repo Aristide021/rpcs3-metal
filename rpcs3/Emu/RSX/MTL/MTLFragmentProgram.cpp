@@ -44,7 +44,7 @@ static bool spirv_to_msl(const std::vector<u32>& spirv, mtl::compiled_shader& ou
 		spirv_cross::CompilerMSL::Options opts;
 		opts.platform         = spirv_cross::CompilerMSL::Options::macOS;
 		opts.msl_version      = spirv_cross::CompilerMSL::Options::make_msl_version(3, 0);
-		opts.argument_buffers = true;
+		opts.argument_buffers = true; // see MTLVertexProgram.cpp for rationale
 		compiler.set_msl_options(opts);
 
 		const auto& resources = compiler.get_shader_resources();
@@ -67,10 +67,27 @@ void MTLFragmentProgram::Decompile(const RSXFragmentProgram& prog)
 	// Step 1: RSX microcode → Vulkan GLSL
 	VKFragmentProgram vk_prog;
 	vk_prog.Decompile(prog);
-	decompiled_size = vk_prog.decompiled_size;
 	output_color_masks = vk_prog.output_color_masks;
 
-	const std::string& glsl = vk_prog.shader.get_source();
+	std::string glsl = vk_prog.shader.get_source();
+
+	// See MTLVertexProgram.cpp: SPIRV-Cross MSL backend corrupts the heap when fed
+	// `uniform` blocks containing std430 unsized runtime arrays. Promote them to
+	// SSBOs (`readonly buffer`) for our MTL path only — MSL output is equivalent.
+	auto promote = [&](const std::string& needle)
+	{
+		const std::string with_uniform = "uniform " + needle;
+		const std::string with_buffer  = "readonly restrict buffer " + needle;
+		size_t pos = 0;
+		while ((pos = glsl.find(with_uniform, pos)) != std::string::npos)
+		{
+			glsl.replace(pos, with_uniform.size(), with_buffer);
+			pos += with_buffer.size();
+		}
+	};
+	promote("FragmentConstantsBuffer");
+	promote("FragmentStateBuffer");
+	promote("TextureParametersBuffer");
 
 	if (g_cfg.video.log_programs)
 	{
@@ -80,8 +97,7 @@ void MTLFragmentProgram::Decompile(const RSXFragmentProgram& prog)
 
 	// Step 2: Vulkan GLSL → SPIR-V
 	std::vector<u32> spirv;
-	std::string glsl_copy = glsl;
-	if (!spirv::compile_glsl_to_spv(spirv, glsl_copy,
+	if (!spirv::compile_glsl_to_spv(spirv, glsl,
 		::glsl::program_domain::glsl_fragment_program,
 		::glsl::glsl_rules_vulkan))
 	{
@@ -96,7 +112,14 @@ void MTLFragmentProgram::Decompile(const RSXFragmentProgram& prog)
 		return;
 	}
 
-	parr = vk_prog.parr;
+	// Capture binding locations from the VK decompiler's binding table.
+	const auto& bt = vk_prog.binding_table;
+	binding_table.context_buf    = bt.context_buffer_location;
+	binding_table.constants_buf  = bt.cbuf_location;
+	binding_table.tex_param_buf  = bt.tex_param_location;
+	binding_table.rasterizer_heap = bt.polygon_stipple_params_location;
+	for (int i = 0; i < 16; ++i)
+		binding_table.ftex_location[i] = bt.ftex_location[i];
 
 	if (g_cfg.video.log_programs)
 	{

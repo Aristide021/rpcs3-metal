@@ -1,5 +1,6 @@
 #pragma once
 #include "MTLShaderTypes.h"
+#include "MTLRasterState.h"
 #include <memory>
 
 // Opaque handle — MTLRenderPipelineState lives in the .mm implementation.
@@ -12,7 +13,9 @@ namespace mtl
 	class program
 	{
 	public:
-		program() = default;
+		// Defined out-of-line so unique_ptr<MTLPipelineHandle> sees the complete
+		// type at instantiation sites.
+		program();
 		~program();
 
 		program(const program&) = delete;
@@ -20,10 +23,13 @@ namespace mtl
 
 		// Build the pipeline state from pre-compiled MSL source strings.
 		// device_handle must be an id<MTLDevice>* cast to void*.
+		// raster supplies color/depth pixel formats and blend state —
+		// all three are baked into MTLRenderPipelineState by Metal.
 		bool build(
-			void*                      device_handle,
-			const compiled_shader&     vs,
-			const compiled_shader&     fs);
+			void*                        device_handle,
+			const compiled_shader&       vs,
+			const compiled_shader&       fs,
+			const pipeline_raster_config& raster);
 
 		// The underlying MTLRenderPipelineState, cast to void* for C++ callers.
 		void* pipeline_state() const;

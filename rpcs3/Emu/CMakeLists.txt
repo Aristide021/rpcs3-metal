@@ -665,6 +665,50 @@ if(APPLE)
         RSX/MTL/MTLVertexProgram.cpp
         RSX/MTL/MTLFragmentProgram.cpp
         RSX/MTL/MTLProgramPipeline.mm
+        RSX/MTL/MTLFormats.mm
+        RSX/MTL/MTLRasterState.mm
+        RSX/MTL/MTLRenderTargets.mm
+        RSX/MTL/MTLTextureCache.mm
+    )
+    # SPIRV-Cross uses C++ exceptions; the RPCS3 default is -fno-exceptions,
+    # so enable exceptions just for the two TUs that call into it.
+    set_source_files_properties(
+        RSX/MTL/MTLVertexProgram.cpp
+        RSX/MTL/MTLFragmentProgram.cpp
+        PROPERTIES
+            COMPILE_FLAGS "$<IF:$<CXX_COMPILER_ID:MSVC>,/EHsc,-fexceptions>"
+            SKIP_PRECOMPILE_HEADERS ON
+    )
+    # Force Obj-C++ mode for .mm files and disable module scanning. CMake/clang
+    # otherwise compiles them as plain C++, which breaks `id<Protocol>` syntax.
+    set_source_files_properties(
+        RSX/MTL/MTLGSRender.mm
+        RSX/MTL/MTLBufferAllocator.mm
+        RSX/MTL/MTLDraw.mm
+        RSX/MTL/MTLProgramPipeline.mm
+        RSX/MTL/MTLFormats.mm
+        RSX/MTL/MTLRasterState.mm
+        RSX/MTL/MTLRenderTargets.mm
+        RSX/MTL/MTLTextureCache.mm
+        PROPERTIES
+            CXX_SCAN_FOR_MODULES OFF
+            COMPILE_FLAGS "-x objective-c++"
+    )
+    target_link_libraries(rpcs3_emu PRIVATE
+        "-framework Metal"
+        "-framework QuartzCore"
+        3rdparty::spirv-cross
+    )
+endif()
+
+if(APPLE)
+    target_sources(rpcs3_emu PRIVATE
+        RSX/MTL/MTLGSRender.mm
+        RSX/MTL/MTLBufferAllocator.mm
+        RSX/MTL/MTLDraw.mm
+        RSX/MTL/MTLVertexProgram.cpp
+        RSX/MTL/MTLFragmentProgram.cpp
+        RSX/MTL/MTLProgramPipeline.mm
         RSX/MTL/MTLFormats.cpp
     )
     target_link_libraries(rpcs3_emu PRIVATE

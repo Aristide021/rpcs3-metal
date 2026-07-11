@@ -1,7 +1,10 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
+#define Vector128 _AppleCarbonVector128
 #import <Metal/Metal.h>
+#undef Vector128
+
 #include "stdafx.h"
 #include "MTLBufferAllocator.h"
 #include "util/logs.hpp"
@@ -15,6 +18,7 @@ struct MTLBufferState
 	uint8_t*      base   = nullptr;
 };
 
+mtl::buffer_ring::buffer_ring() = default;
 mtl::buffer_ring::~buffer_ring() = default;
 
 bool mtl::buffer_ring::init(void* device_handle, usz size)

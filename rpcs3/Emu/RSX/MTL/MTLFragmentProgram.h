@@ -10,9 +10,8 @@ public:
 	MTLFragmentProgram() = default;
 	~MTLFragmentProgram() = default;
 
-	ParamArray parr;
-	u32 decompiled_size = 0;
 	mtl::compiled_shader compiled;
+	mtl::fragment_binding_table binding_table;
 
 	std::array<u32, 4> output_color_masks{};
 
