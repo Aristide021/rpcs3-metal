@@ -19,7 +19,18 @@
 
 #include "util/logs.hpp"
 
+#include <malloc/malloc.h>
+
 LOG_CHANNEL(mtl_log, "MTL");
+
+// Debug aid: validate the default malloc zone so we can bracket where heap
+// corruption is introduced. Returns true if the zone checks out.
+static bool check_heap(const char* tag)
+{
+	const bool ok = malloc_zone_check(nullptr);
+	mtl_log.warning("MTL: heap check [%s]: %s", tag, ok ? "OK" : "CORRUPT");
+	return ok;
+}
 
 // ---------------------------------------------------------------------------
 // SPIRV-Cross resource → mtl::program_input conversion
@@ -49,7 +60,10 @@ static bool spirv_to_msl(
 {
 	try
 	{
-		spirv_cross::CompilerMSL compiler(spirv);
+		// Use the (ptr, size) ctor: the by-value std::vector ctor trips a
+		// heap-corruption abort inside this process (see project notes) even
+		// though the identical SPIR-V passes in a standalone harness.
+		spirv_cross::CompilerMSL compiler(spirv.data(), spirv.size());
 
 		spirv_cross::CompilerMSL::Options opts;
 		opts.platform         = spirv_cross::CompilerMSL::Options::macOS;
@@ -84,6 +98,7 @@ void MTLVertexProgram::Decompile(const RSXVertexProgram& prog)
 {
 	mtl_log.warning("MTL: VS Decompile V1 — prog.data.size=%zu jump_table.size=%zu base_addr=0x%x output_mask=0x%x",
 		prog.data.size(), prog.jump_table.size(), prog.base_address, prog.output_mask);
+	check_heap("V1 entry");
 	// Step 1: RSX microcode → Vulkan GLSL (no Vulkan device needed)
 	VKVertexProgram vk_prog;
 	mtl_log.warning("MTL: VS Decompile V2 — about to vk_prog.Decompile (vk_prog at %p)", &vk_prog);
@@ -123,6 +138,7 @@ void MTLVertexProgram::Decompile(const RSXVertexProgram& prog)
 	}
 
 	mtl_log.warning("MTL: VS Decompile V5 — about to glsl→spv");
+	check_heap("V5 pre-glslang");
 	// Step 2: Vulkan GLSL → SPIR-V (reuse the existing glslang compiler)
 	std::vector<u32> spirv;
 	if (!spirv::compile_glsl_to_spv(spirv, glsl,
@@ -133,9 +149,12 @@ void MTLVertexProgram::Decompile(const RSXVertexProgram& prog)
 		return;
 	}
 	mtl_log.warning("MTL: VS Decompile V6 — spv words=%zu, about to spirv→msl", spirv.size());
+	check_heap("V6 post-glslang");
 	// Dump SPIR-V too in case glslang produced something unusual.
-	fs::write_file("/tmp/rpcs3-last-vs.spv", fs::rewrite,
-		std::string_view(reinterpret_cast<const char*>(spirv.data()), spirv.size() * sizeof(u32)));
+	if (fs::file spv_dump{"/tmp/rpcs3-last-vs.spv", fs::rewrite})
+	{
+		spv_dump.write(spirv.data(), spirv.size() * sizeof(u32));
+	}
 
 	// Step 3: SPIR-V → MSL (SPIRV-Cross)
 	if (!spirv_to_msl(spirv, compiled))

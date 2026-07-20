@@ -39,7 +39,8 @@ static bool spirv_to_msl(const std::vector<u32>& spirv, mtl::compiled_shader& ou
 {
 	try
 	{
-		spirv_cross::CompilerMSL compiler(spirv);
+		// (ptr, size) ctor — see MTLVertexProgram.cpp.
+		spirv_cross::CompilerMSL compiler(spirv.data(), spirv.size());
 
 		spirv_cross::CompilerMSL::Options opts;
 		opts.platform         = spirv_cross::CompilerMSL::Options::macOS;
